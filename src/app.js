@@ -9,6 +9,6 @@ app.use(routes)
 
 
 const PORT = 5000;
-app.listen(PORT, () => { console.log(`servidor rodando na porta: ${PORT}`) });
+app.listen(process.env.PORT, () => { console.log(`servidor rodando na porta: ${process.env.PORT}`) });
 
 
