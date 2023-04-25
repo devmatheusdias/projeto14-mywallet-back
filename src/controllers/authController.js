@@ -39,7 +39,7 @@ export async function signup(req, res) {
 
         await db.collection("wallets").insertOne({ name, email, password: passwordHash });
 
-        return res.status(201).send(userValidation);
+        return res.sendStatus(201)
 
 
     } catch (error) {
@@ -51,7 +51,7 @@ export async function home(req, res) {
     const { authorization } = req.headers;
     const token = authorization?.replace('Bearer', '').trim();
 
-    if (!token) return res.send('falta token')
+    if (!token) return res.status(401).send('Unauthorized')
 
     const session = await db.collection("sessions").findOne({ token });
     if (!session) return res.send('sessao nao encontrada')
@@ -76,7 +76,7 @@ export async function novaTransacao(req, res) {
     const { authorization } = req.headers;
     const token = authorization?.replace('Bearer', '').trim();
 
-    if (!token) return res.send('falta token');
+    if (!token) return res.status(401).send('unauthorized');
     const session = await db.collection("sessions").findOne({ token });
 
     if (!session) return res.send('sessao nao encontrada');
@@ -92,9 +92,3 @@ export async function novaTransacao(req, res) {
     }
 }
 
-
-
-// export async function getUsers(req, res){
-//     const users = await db.collection("wallets").find().toArray()
-//     res.send(users);
-// }
