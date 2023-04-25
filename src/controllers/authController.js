@@ -57,10 +57,12 @@ export async function home(req, res) {
     if (!session) return res.send('sessao nao encontrada')
 
     const user = await db.collection("wallets").findOne({ _id: session.userId });
+    const transactions = await db.collection("transactions").find({ userId: session.userId }).toArray()
+
 
     if (user) {
-        delete user.password;
-        res.send(user)
+        // delete user.password;
+        res.send(transactions)
     } else {
         res.sendStatus(401)
     }
@@ -69,28 +71,25 @@ export async function home(req, res) {
 export async function novaTransacao(req, res) {
 
     const currentDate = getDate();
-    const {value, description} = req.body;
-    const {tipo} = req.params;
-    const {authorization}  = req.headers;
+    const { value, description } = req.body;
+    const { tipo } = req.params;
+    const { authorization } = req.headers;
     const token = authorization?.replace('Bearer', '').trim();
 
-    if(!token) return res.send('falta token');
+    if (!token) return res.send('falta token');
+    const session = await db.collection("sessions").findOne({ token });
 
-    const session = await db.collection("sessions").findOne({token});
-    if(!session) return res.send('sessao nao encontrada');
-
+    if (!session) return res.send('sessao nao encontrada');
 
     try {
-       
-        await db.collection("transactions").insertOne({currentDate, value, description, tipo, userId: session.userId});
+
+        await db.collection("transactions").insertOne({ currentDate, value: Number(value), description, tipo, userId: session.userId });
 
         return res.status(201).send('transação inserida com sucesso!');
 
     } catch (error) {
         return res.sendStatus(422)
     }
-
-
 }
 
 
