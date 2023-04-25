@@ -1,18 +1,11 @@
 import bcrypt from 'bcrypt';
 import { v4 as uuid } from 'uuid';
-import { signInSchema, signUpSchema } from '../schemas/auth.schema.js';
 import { db } from '../database/database.js';
-import { validateSchema } from '../middlewares/validateSchema.middleware.js';
+import { getDate } from '../middlewares/getDate.middleware.js';
 
 
 export async function signin(req, res) {
     const { email, password } = req.body;
-
-    const userValidation = { email, password };
-
-    const errors = validateSchema(req.body)
-    if(errors) return res.send(422).send(errors)
-
 
     try {
         const user = await db.collection('wallets').findOne({ email });
@@ -39,15 +32,6 @@ export async function signup(req, res) {
 
     const passwordHash = bcrypt.hashSync(password, 10)
 
-    const userValidation = { name, email, password };
-
-    const validation = signUpSchema.validate(userValidation, { abortEarly: false });
-
-    if (validation.error) {
-        const errors = validation.error.details.map((detail) => detail.message);
-        return res.status(422).send(console.log(errors))
-    }
-
     try {
         const emailExists = await db.collection("wallets").findOne({ email: email });
 
@@ -62,3 +46,56 @@ export async function signup(req, res) {
         return res.sendStatus(422)
     }
 }
+
+export async function home(req, res) {
+    const { authorization } = req.headers;
+    const token = authorization?.replace('Bearer', '').trim();
+
+    if (!token) return res.send('falta token')
+
+    const session = await db.collection("sessions").findOne({ token });
+    if (!session) return res.send('sessao nao encontrada')
+
+    const user = await db.collection("wallets").findOne({ _id: session.userId });
+
+    if (user) {
+        delete user.password;
+        res.send(user)
+    } else {
+        res.sendStatus(401)
+    }
+}
+
+export async function novaTransacao(req, res) {
+
+    const currentDate = getDate();
+    const {value, description} = req.body;
+    const {tipo} = req.params;
+    const {authorization}  = req.headers;
+    const token = authorization?.replace('Bearer', '').trim();
+
+    if(!token) return res.send('falta token');
+
+    const session = await db.collection("sessions").findOne({token});
+    if(!session) return res.send('sessao nao encontrada');
+
+
+    try {
+       
+        await db.collection("transactions").insertOne({currentDate, value, description, tipo, userId: session.userId});
+
+        return res.status(201).send('transação inserida com sucesso!');
+
+    } catch (error) {
+        return res.sendStatus(422)
+    }
+
+
+}
+
+
+
+// export async function getUsers(req, res){
+//     const users = await db.collection("wallets").find().toArray()
+//     res.send(users);
+// }

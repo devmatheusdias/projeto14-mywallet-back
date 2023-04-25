@@ -12,7 +12,3 @@ const PORT = 5000;
 app.listen(PORT, () => { console.log(`servidor rodando na porta: ${PORT}`) });
 
 
-app.get('/users', async (req, res) => {
-    const users = await db.collection("wallets").find().toArray()
-    res.send(users);
-})
